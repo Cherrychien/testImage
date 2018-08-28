@@ -1,19 +1,29 @@
-FROM ubuntu:12.04
+FROM mhart/alpine-node:4
 
-# Install dependencies
-RUN apt-get update -y
-RUN apt-get install -y apache2
+# Home directory for Node-RED application source code.
+RUN mkdir -p /usr/src/node-red
 
-# Install apache and write hello! Cherry! message
-RUN echo "Hello Cherry!" > /var/www/index.html
+# User data directory, contains flows, config and nodes.
+RUN mkdir /data
 
-# Configure apache
-RUN a2enmod rewrite
-RUN chown -R www-data:www-data /var/www
-ENV APACHE_RUN_USER www-data
-ENV APACHE_RUN_GROUP www-data
-ENV APACHE_LOG_DIR /var/log/apache2
+WORKDIR /usr/src/node-red
 
-EXPOSE 80
+# Add node-red user so we aren't running as root.
+RUN adduser -h /usr/src/node-red -D -H node-red \
+    && chown -R node-red:node-red /data \
+    && chown -R node-red:node-red /usr/src/node-red
 
-CMD ["/usr/sbin/apache2", "-D",  "FOREGROUND"]
+USER node-red
+
+# package.json contains Node-RED NPM module and node dependencies
+COPY package.json /usr/src/node-red/
+RUN npm install
+
+# User configuration directory volume
+VOLUME ["/data"]
+EXPOSE 2880
+
+# Environment variable holding file path for flows configuration
+ENV FLOWS=flows.json
+
+CMD ["npm", "start", "--", "--userDir", "/data"]
