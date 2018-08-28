@@ -21,7 +21,7 @@ RUN npm install
 
 # User configuration directory volume
 VOLUME ["/data"]
-EXPOSE 2880
+EXPOSE 3880
 
 # Environment variable holding file path for flows configuration
 ENV FLOWS=flows.json
